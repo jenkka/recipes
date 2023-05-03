@@ -11,9 +11,10 @@ import 'package:recipes/models/recipe_model.dart';
 import '../models/picture_model.dart';
 
 class RecipeProvider extends ChangeNotifier {
-  List<RecipeModel> recipes = <RecipeModel>[];
-  List<RecipeModel> favorites = <RecipeModel>[];
-  List<RecipeModel> filteredRecipes = <RecipeModel>[];
+  List<RecipeModel> recipes = [];
+  List<RecipeModel> favorites = [];
+  List<RecipeModel> filteredRecipes = [];
+  List<PictureModel> pictures = [];
   TextEditingController textEditingController = TextEditingController();
   final CollectionReference<Map<String, dynamic>> _favoritesCollection =
       FirebaseFirestore.instance.collection('favorites');
@@ -152,9 +153,10 @@ class RecipeProvider extends ChangeNotifier {
   Future<List<PictureModel>> getPictures(String recipeId) async {
     final querySnapshot =
         await _picturesCollection.where('recipeId', isEqualTo: recipeId).get();
-    final pictures = querySnapshot.docs
+    pictures = querySnapshot.docs
         .map((document) => PictureModel.fromSnapshot(document))
         .toList();
+    notifyListeners();
     return pictures;
   }
 
@@ -164,26 +166,26 @@ class RecipeProvider extends ChangeNotifier {
     if (pickedFile != null) {
       final file = File(pickedFile.path);
       final fileName = path.basename(file.path);
-      final storageReference =
-          FirebaseStorage.instance.ref().child('pictures/$recipeId/$fileName');
-      final uploadTask = storageReference.putFile(file);
-
-      try {
-        await uploadTask.whenComplete(() => null);
-        final url = await storageReference.getDownloadURL();
-        final picture = PictureModel(
-          recipeId: recipeId,
-          userId: userId,
-          imageUrl: url,
-          createdAt: DateTime.now(),
-        );
-        await FirebaseFirestore.instance
-            .collection('pictures')
-            .doc()
-            .set(picture.toMap());
-      } catch (error) {
-        print('Error uploading picture: $error');
-      }
+      final ref = FirebaseStorage.instance
+          .ref()
+          .child('recipePictures')
+          .child(recipeId)
+          .child(fileName);
+      final task = ref.putFile(file);
+      await task.whenComplete(() async {
+        final pictureUrl = await ref.getDownloadURL();
+        await _picturesCollection.add({
+          'recipeId': recipeId,
+          'userId': userId,
+          'pictureUrl': pictureUrl,
+        });
+        pictures.add(PictureModel(
+            recipeId: recipeId,
+            userId: userId,
+            imageUrl: pictureUrl,
+            createdAt: DateTime.now()));
+        notifyListeners();
+      });
     }
   }
 }
