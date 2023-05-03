@@ -1,6 +1,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="mx.iteso.cookiecookie">
     <uses-permission android:name="android.permission.QUERY_ALL_PACKAGES" />
+
     <queries>
         <intent>
             <action android:name="android.intent.action.VIEW" />

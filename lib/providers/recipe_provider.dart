@@ -1,9 +1,14 @@
 import 'dart:convert';
-
+import 'dart:io';
+import 'package:path/path.dart' as path;
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:image_picker/image_picker.dart';
 import 'package:recipes/models/recipe_model.dart';
+
+import '../models/picture_model.dart';
 
 class RecipeProvider extends ChangeNotifier {
   List<RecipeModel> recipes = <RecipeModel>[];
@@ -12,6 +17,8 @@ class RecipeProvider extends ChangeNotifier {
   TextEditingController textEditingController = TextEditingController();
   final CollectionReference<Map<String, dynamic>> _favoritesCollection =
       FirebaseFirestore.instance.collection('favorites');
+  final CollectionReference<Map<String, dynamic>> _picturesCollection =
+      FirebaseFirestore.instance.collection('pictures');
 
   String apiKey = 'fe521415f74b4d33894db931c25b0d60';
   String apiUrl = 'https://api.spoonacular.com/recipes/';
@@ -52,7 +59,7 @@ class RecipeProvider extends ChangeNotifier {
     isLoading = true;
     notifyListeners();
 
-    print(recipe);
+    // print(recipe);
 
     if (snapshot.exists) {
       await docRef.delete();
@@ -98,7 +105,7 @@ class RecipeProvider extends ChangeNotifier {
   Future<RecipeModel> getRecipeDetails(int id) async {
     String url = '$apiUrl/${id.toString()}/information';
     Uri uri = Uri.parse(url);
-    print(url);
+    // print(url);
     var response = await http.get(uri, headers: {'x-api-key': apiKey});
     Map<String, dynamic> jsonData = jsonDecode(response.body);
 
@@ -117,7 +124,7 @@ class RecipeProvider extends ChangeNotifier {
   }
 
   Future<void> setFavorites(String userId) async {
-    print("Setting favorites");
+    // print("Setting favorites");
     try {
       QuerySnapshot snapshot = await FirebaseFirestore.instance
           .collection('favorites')
@@ -142,35 +149,41 @@ class RecipeProvider extends ChangeNotifier {
     }
   }
 
-  Future<List<String>> getPictures(int recipeId) async {
-    // TODO: Fix. Also, show images section in details and add a button to upload a picture.
-    List<String> pictureUrls = [];
-
-    try {
-      QuerySnapshot<Map<String, dynamic>> querySnapshot =
-          await FirebaseFirestore.instance
-              .collection('pictures')
-              .where('recipeId', isEqualTo: recipeId)
-              .get();
-
-      if (querySnapshot.docs.isNotEmpty) {
-        for (DocumentSnapshot<Map<String, dynamic>> snapshot
-            in querySnapshot.docs) {
-          Map<String, dynamic>? data = snapshot.data();
-
-          if (data != null && data.containsKey('url')) {
-            pictureUrls.add(data['url']);
-          }
-        }
-      }
-    } catch (e) {
-      print('Error getting pictures: $e');
-    }
-
-    return pictureUrls;
+  Future<List<PictureModel>> getPictures(String recipeId) async {
+    final querySnapshot =
+        await _picturesCollection.where('recipeId', isEqualTo: recipeId).get();
+    final pictures = querySnapshot.docs
+        .map((document) => PictureModel.fromSnapshot(document))
+        .toList();
+    return pictures;
   }
 
-  void savePicture(int recipeId) {
-    // TODO: Create
+  Future<void> savePicture(String recipeId, String userId) async {
+    final pickedFile =
+        await ImagePicker().pickImage(source: ImageSource.gallery);
+    if (pickedFile != null) {
+      final file = File(pickedFile.path);
+      final fileName = path.basename(file.path);
+      final storageReference =
+          FirebaseStorage.instance.ref().child('pictures/$recipeId/$fileName');
+      final uploadTask = storageReference.putFile(file);
+
+      try {
+        await uploadTask.whenComplete(() => null);
+        final url = await storageReference.getDownloadURL();
+        final picture = PictureModel(
+          recipeId: recipeId,
+          userId: userId,
+          imageUrl: url,
+          createdAt: DateTime.now(),
+        );
+        await FirebaseFirestore.instance
+            .collection('pictures')
+            .doc()
+            .set(picture.toMap());
+      } catch (error) {
+        print('Error uploading picture: $error');
+      }
+    }
   }
 }

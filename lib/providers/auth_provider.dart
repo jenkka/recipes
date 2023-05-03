@@ -19,8 +19,8 @@ class AuthProvider with ChangeNotifier {
         password: password,
       );
       _user = userCredential.user;
-      print("Signed in");
-      print(_user);
+      // print("Signed in");
+      // print(_user);
       notifyListeners();
     } on FirebaseAuthException catch (e) {
       if (e.code == 'user-not-found') {
@@ -54,7 +54,7 @@ class AuthProvider with ChangeNotifier {
   Future<void> signOut() async {
     await _firebaseAuth.signOut();
     _user = null;
-    print("Signed out");
+    // print("Signed out");
     notifyListeners();
   }
 }
