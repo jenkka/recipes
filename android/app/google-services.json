@@ -1,0 +1,54 @@
+{
+  "project_info": {
+    "project_number": "229124837314",
+    "project_id": "recipes-f413e",
+    "storage_bucket": "recipes-f413e.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:229124837314:android:31e55f3b84aa29550f105b",
+        "android_client_info": {
+          "package_name": "mx.iteso.cookiecookie"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "229124837314-4mq3fp7t6292tgbefl3fsvfd51bkf531.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "mx.iteso.cookiecookie",
+            "certificate_hash": "78bc8e8af1dec4f67341bfc18d6bba8c2788adf2"
+          }
+        },
+        {
+          "client_id": "229124837314-196ehklrudr8ih97mtqlh784h179ceb6.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAKpa-3T81q6YFonlpCjX_tlBwtAoJ1D5A"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "229124837314-196ehklrudr8ih97mtqlh784h179ceb6.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "229124837314-lt1f50jsh8ajcofbnjmik4lrm9u07q4l.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "mx.iteso.cookiecookie"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
