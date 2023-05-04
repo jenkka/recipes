@@ -10,8 +10,6 @@ class RecipeModel {
   final List<dynamic> dishTypes;
   final String summary;
   final String url;
-  // final List<String> ingredients;
-  // final List<String> steps;
   bool isFavorite;
 
   RecipeModel({
@@ -24,8 +22,6 @@ class RecipeModel {
     this.dishTypes = const [],
     this.summary = "",
     this.url = "",
-    // required this.ingredients,
-    // required this.steps,
     this.isFavorite = false,
   });
 

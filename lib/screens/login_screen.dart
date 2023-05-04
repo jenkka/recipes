@@ -77,7 +77,6 @@ class LoginScreen extends StatelessWidget {
                         email, password);
 
                     if (context.mounted && authProvider.isLoggedIn()) {
-                      // Navigate to home screen
                       Navigator.of(context).pushReplacementNamed('/');
                     } else {
                       showDialog(
@@ -105,7 +104,6 @@ class LoginScreen extends StatelessWidget {
               const SizedBox(height: 20),
               TextButton(
                 onPressed: () {
-                  // Navigate to register screen
                   Navigator.of(context).pushNamed('/register');
                 },
                 child: const Text('Create an account'),
