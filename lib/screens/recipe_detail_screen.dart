@@ -7,16 +7,29 @@ import 'package:flutter_html/flutter_html.dart';
 import 'package:flutter_share/flutter_share.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-class RecipeDetailScreen extends StatelessWidget {
+class RecipeDetailScreen extends StatefulWidget {
   final RecipeModel recipe;
 
   const RecipeDetailScreen({Key? key, required this.recipe}) : super(key: key);
 
   @override
-  Widget build(BuildContext context) {
-    final recipeProvider = Provider.of<RecipeProvider>(context);
-    final authProvider = Provider.of<AuthProvider>(context);
+  _RecipeDetailScreenState createState() => _RecipeDetailScreenState();
+}
 
+class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
+  late RecipeProvider recipeProvider;
+  late AuthProvider authProvider;
+
+  @override
+  void initState() {
+    super.initState();
+    recipeProvider = Provider.of<RecipeProvider>(context, listen: false);
+    authProvider = Provider.of<AuthProvider>(context, listen: false);
+    recipeProvider.loadPictures(widget.recipe.id.toString());
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         backgroundColor: const Color.fromARGB(255, 255, 189, 89),
@@ -43,34 +56,34 @@ class RecipeDetailScreen extends StatelessWidget {
             icon: const Icon(Icons.share),
             onPressed: () async {
               await FlutterShare.share(
-                title: recipe.title,
-                text: recipe.summary,
-                linkUrl: recipe.url,
+                title: widget.recipe.title,
+                text: widget.recipe.summary,
+                linkUrl: widget.recipe.url,
                 chooserTitle: 'Share Recipe',
               );
             },
           )
         ],
       ),
-      body: FutureBuilder<RecipeModel>(
-        future: recipeProvider.getRecipeDetails(recipe.id),
-        builder: (context, snapshot) {
-          if (snapshot.hasData) {
-            RecipeModel recipe = snapshot.data!;
-            return SingleChildScrollView(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Image.network(
-                    recipe.imgUrl,
-                    height: 300,
-                    width: double.infinity,
-                    fit: BoxFit.cover,
-                  ),
-                  const SizedBox(height: 20),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 20),
-                    child: Column(
+      body: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 20),
+        child: FutureBuilder<RecipeModel>(
+          future: recipeProvider.getRecipeDetails(widget.recipe.id),
+          builder: (context, snapshot) {
+            if (snapshot.hasData) {
+              RecipeModel recipe = snapshot.data!;
+              return SingleChildScrollView(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Image.network(
+                      recipe.imgUrl,
+                      height: 300,
+                      width: double.infinity,
+                      fit: BoxFit.cover,
+                    ),
+                    const SizedBox(height: 20),
+                    Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
@@ -93,66 +106,96 @@ class RecipeDetailScreen extends StatelessWidget {
                         Html(data: recipe.summary),
                       ],
                     ),
-                  ),
-                  const SizedBox(height: 20),
-                  const Text(
-                    'Pictures from users',
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 20,
+                    const SizedBox(height: 30),
+                    const Text(
+                      'Pictures from users',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 20,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 10),
-                  Consumer<RecipeProvider>(
-                    builder: (context, recipeProvider, _) {
-                      return SizedBox(
-                        height: 150,
-                        child: ListView.builder(
-                          scrollDirection: Axis.horizontal,
-                          itemCount: recipeProvider.pictures.length,
-                          itemBuilder: (context, index) {
-                            return Padding(
-                              padding: const EdgeInsets.all(8.0),
-                              child: Image.network(
-                                recipeProvider.pictures[index].imageUrl,
-                                width: 100,
-                                height: 100,
-                                fit: BoxFit.cover,
-                              ),
-                            );
+                    const SizedBox(height: 10),
+                    Consumer<RecipeProvider>(
+                      builder: (context, recipeProvider, _) {
+                        return SizedBox(
+                          height: 150,
+                          child: ListView.builder(
+                            scrollDirection: Axis.horizontal,
+                            itemCount: recipeProvider.pictures.length,
+                            itemBuilder: (context, index) {
+                              return Padding(
+                                padding: const EdgeInsets.all(8.0),
+                                child: GestureDetector(
+                                  onTap: () {
+                                    showDialog(
+                                      context: context,
+                                      builder: (context) => Dialog(
+                                        child: Image.network(
+                                          recipeProvider
+                                              .pictures[index].pictureUrl,
+                                          fit: BoxFit.contain,
+                                        ),
+                                      ),
+                                    );
+                                  },
+                                  child: Padding(
+                                    padding: const EdgeInsets.all(8.0),
+                                    child: Image.network(
+                                      recipeProvider.pictures[index].pictureUrl,
+                                      width: 100,
+                                      height: 100,
+                                      fit: BoxFit.cover,
+                                    ),
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
+                        );
+                      },
+                    ),
+                    const SizedBox(height: 20),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        ElevatedButton(
+                          onPressed: () {
+                            recipeProvider.savePicture(
+                                recipe.id.toString(), authProvider.user!.uid);
                           },
+                          child: const Text('Upload Picture'),
                         ),
-                      );
-                    },
-                  ),
-                  const SizedBox(height: 20),
-                  ElevatedButton(
-                    onPressed: () {
-                      recipeProvider.savePicture(
-                          recipe.id.toString(), authProvider.user!.uid);
-                    },
-                    child: const Text('Upload Picture'),
-                  ),
-                  const SizedBox(height: 20),
-                ],
-              ),
-            );
-          } else if (snapshot.hasError) {
-            return Center(
-              child: Text(
-                "Error: ${snapshot.error}",
-                style: const TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 24,
+                        const SizedBox(width: 20),
+                        ElevatedButton(
+                          onPressed: () {
+                            recipeProvider.savePictureFromCamera(
+                                recipe.id.toString(), authProvider.user!.uid);
+                          },
+                          child: const Text('Take Picture'),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 20),
+                  ],
                 ),
-              ),
-            );
-          } else {
-            return const Center(
-              child: CircularProgressIndicator(),
-            );
-          }
-        },
+              );
+            } else if (snapshot.hasError) {
+              return Center(
+                child: Text(
+                  "Error: ${snapshot.error}",
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 24,
+                  ),
+                ),
+              );
+            } else {
+              return const Center(
+                child: CircularProgressIndicator(),
+              );
+            }
+          },
+        ),
       ),
     );
   }

@@ -2,40 +2,32 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 
 class PictureModel {
   final String recipeId;
-  final String imageUrl;
+  final String pictureUrl;
   final String userId;
-  final DateTime createdAt;
 
   PictureModel(
-      {required this.recipeId,
-      required this.imageUrl,
-      required this.userId,
-      required this.createdAt});
+      {required this.recipeId, required this.pictureUrl, required this.userId});
 
   factory PictureModel.fromJson(Map<String, dynamic> json) {
     return PictureModel(
-      recipeId: json['recipe_id'],
-      imageUrl: json['image_url'],
-      userId: json['user_id'],
-      createdAt: DateTime.parse(json['created_at']),
-    );
+        recipeId: json['recipeId'],
+        pictureUrl: json['pictureUrl'],
+        userId: json['userId']);
   }
 
   Map<String, dynamic> toJson() {
     return {
       'recipe_id': recipeId,
-      'image_url': imageUrl,
+      'image_url': pictureUrl,
       'user_id': userId,
-      'created_at': createdAt.toIso8601String(),
     };
   }
 
   Map<String, dynamic> toMap() {
     return {
       'recipeId': recipeId,
-      'imageUrl': imageUrl,
+      'pictureUrl': pictureUrl,
       'userId': userId,
-      'createdAt': createdAt
     };
   }
 
@@ -44,8 +36,7 @@ class PictureModel {
     return PictureModel(
       recipeId: data['recipeId'],
       userId: data['userId'],
-      imageUrl: data['imageUrl'],
-      createdAt: (data['createdAt'] as Timestamp).toDate(),
+      pictureUrl: data['pictureUrl'] ?? "",
     );
   }
 }

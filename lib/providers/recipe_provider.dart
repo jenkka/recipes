@@ -11,10 +11,12 @@ import 'package:recipes/models/recipe_model.dart';
 import '../models/picture_model.dart';
 
 class RecipeProvider extends ChangeNotifier {
+  List<PictureModel> _pictures = [];
+
+  List<PictureModel> get pictures => _pictures;
   List<RecipeModel> recipes = [];
   List<RecipeModel> favorites = [];
   List<RecipeModel> filteredRecipes = [];
-  List<PictureModel> pictures = [];
   TextEditingController textEditingController = TextEditingController();
   final CollectionReference<Map<String, dynamic>> _favoritesCollection =
       FirebaseFirestore.instance.collection('favorites');
@@ -104,6 +106,7 @@ class RecipeProvider extends ChangeNotifier {
   }
 
   Future<RecipeModel> getRecipeDetails(int id) async {
+    print("getting recipe details...");
     String url = '$apiUrl/${id.toString()}/information';
     Uri uri = Uri.parse(url);
     // print(url);
@@ -120,6 +123,10 @@ class RecipeProvider extends ChangeNotifier {
         dishTypes: jsonData['dishTypes'],
         summary: jsonData['summary'],
         url: jsonData['sourceUrl']);
+
+    print("Loading pictures");
+    loadPictures(id.toString());
+    print("Loaded pictures!");
 
     return recipe;
   }
@@ -150,14 +157,51 @@ class RecipeProvider extends ChangeNotifier {
     }
   }
 
-  Future<List<PictureModel>> getPictures(String recipeId) async {
-    final querySnapshot =
-        await _picturesCollection.where('recipeId', isEqualTo: recipeId).get();
-    pictures = querySnapshot.docs
-        .map((document) => PictureModel.fromSnapshot(document))
-        .toList();
-    notifyListeners();
-    return pictures;
+  void clearPictures() {
+    _pictures = [];
+  }
+
+  Future<void> loadPictures(String recipeId) async {
+    print("Loading pictures");
+    // _pictures.clear();
+    final pictures = await FirebaseFirestore.instance
+        .collection('pictures')
+        .where('recipeId', isEqualTo: recipeId)
+        .get();
+    print("got pictures from firebase");
+    for (var document in pictures.docs) {
+      print(document.data());
+    }
+    _pictures =
+        pictures.docs.map((doc) => PictureModel.fromJson(doc.data())).toList();
+
+    print("Loaded pictures!");
+  }
+
+  Future<void> savePictureFromCamera(String recipeId, String userId) async {
+    final pickedFile =
+        await ImagePicker().pickImage(source: ImageSource.camera);
+    if (pickedFile != null) {
+      final file = File(pickedFile.path);
+      final fileName = path.basename(file.path);
+      final ref = FirebaseStorage.instance
+          .ref()
+          .child('recipePictures')
+          .child(fileName);
+      final task = ref.putFile(file);
+      await task.whenComplete(() async {
+        final pictureUrl = await ref.getDownloadURL();
+        await _picturesCollection.add({
+          'recipeId': recipeId,
+          'userId': userId,
+          'pictureUrl': pictureUrl,
+          'createdAt': DateTime.now()
+        });
+        pictures.add(PictureModel(
+            recipeId: recipeId, userId: userId, pictureUrl: pictureUrl));
+        notifyListeners();
+      });
+    }
   }
 
   Future<void> savePicture(String recipeId, String userId) async {
@@ -178,14 +222,19 @@ class RecipeProvider extends ChangeNotifier {
           'recipeId': recipeId,
           'userId': userId,
           'pictureUrl': pictureUrl,
+          'createdAt': DateTime.now()
         });
         pictures.add(PictureModel(
-            recipeId: recipeId,
-            userId: userId,
-            imageUrl: pictureUrl,
-            createdAt: DateTime.now()));
+            recipeId: recipeId, userId: userId, pictureUrl: pictureUrl));
         notifyListeners();
       });
     }
+  }
+
+  void reset() {
+    recipes = [];
+    favorites = [];
+    _pictures = [];
+    textEditingController.text = "";
   }
 }

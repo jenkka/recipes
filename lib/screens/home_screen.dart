@@ -39,6 +39,7 @@ class HomeScreen extends StatelessWidget {
             icon: const Icon(Icons.logout),
             onPressed: () {
               authProvider.signOut();
+              recipeProvider.reset();
               Navigator.of(context).pushReplacementNamed('/');
             },
           )
@@ -99,88 +100,92 @@ class HomeScreen extends StatelessWidget {
                   height: 15,
                 ),
                 Expanded(
-                  child: ListView.builder(
-                    itemCount: recipeProvider.recipes.length,
-                    itemBuilder: (BuildContext context, int index) {
-                      RecipeModel recipe = recipeProvider.recipes[index];
+                  child: RefreshIndicator(
+                    onRefresh: recipeProvider.getRecipes,
+                    child: ListView.builder(
+                      itemCount: recipeProvider.recipes.length,
+                      itemBuilder: (BuildContext context, int index) {
+                        RecipeModel recipe = recipeProvider.recipes[index];
 
-                      return GestureDetector(
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                                builder: (context) =>
-                                    RecipeDetailScreen(recipe: recipe)),
-                          );
-                        },
-                        child: Card(
-                          child: Stack(
-                            children: [
-                              ClipRRect(
-                                child: Image.network(
-                                  recipeProvider.recipes[index].imgUrl,
-                                  height: 150,
-                                  width: MediaQuery.of(context).size.width,
-                                  fit: BoxFit.cover,
+                        return GestureDetector(
+                          onTap: () {
+                            recipeProvider.clearPictures();
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                  builder: (context) =>
+                                      RecipeDetailScreen(recipe: recipe)),
+                            );
+                          },
+                          child: Card(
+                            child: Stack(
+                              children: [
+                                ClipRRect(
+                                  child: Image.network(
+                                    recipeProvider.recipes[index].imgUrl,
+                                    height: 150,
+                                    width: MediaQuery.of(context).size.width,
+                                    fit: BoxFit.cover,
+                                  ),
                                 ),
-                              ),
-                              Positioned(
-                                top: 10,
-                                right: 10,
-                                child: GestureDetector(
-                                  onTap: () {
-                                    recipeProvider.toggleFavorite(
-                                      recipe,
-                                      authProvider.user!.uid,
-                                    );
-                                  },
+                                Positioned(
+                                  top: 10,
+                                  right: 10,
+                                  child: GestureDetector(
+                                    onTap: () {
+                                      recipeProvider.toggleFavorite(
+                                        recipe,
+                                        authProvider.user!.uid,
+                                      );
+                                    },
+                                    child: Container(
+                                      decoration: BoxDecoration(
+                                        borderRadius: BorderRadius.circular(20),
+                                        color: Colors.white,
+                                      ),
+                                      padding: const EdgeInsets.all(5),
+                                      child: Icon(
+                                        recipeProvider.recipes[index].isFavorite
+                                            ? Icons.favorite
+                                            : Icons.favorite_border,
+                                        color: recipeProvider
+                                                .recipes[index].isFavorite
+                                            ? Colors.pink
+                                            : Colors.grey,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                Positioned(
+                                  bottom: 10,
+                                  left: 10,
                                   child: Container(
                                     decoration: BoxDecoration(
-                                      borderRadius: BorderRadius.circular(20),
-                                      color: Colors.white,
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: Colors.black.withOpacity(0.6),
+                                          blurRadius: 6,
+                                        ),
+                                      ],
                                     ),
-                                    padding: const EdgeInsets.all(5),
-                                    child: Icon(
-                                      recipeProvider.recipes[index].isFavorite
-                                          ? Icons.favorite
-                                          : Icons.favorite_border,
-                                      color: recipeProvider
-                                              .recipes[index].isFavorite
-                                          ? Colors.pink
-                                          : Colors.grey,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                              Positioned(
-                                bottom: 10,
-                                left: 10,
-                                child: Container(
-                                  decoration: BoxDecoration(
-                                    boxShadow: [
-                                      BoxShadow(
-                                        color: Colors.black.withOpacity(0.6),
-                                        blurRadius: 6,
+                                    child: Text(
+                                      recipeProvider.recipes[index].title,
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 18,
+                                        color: Colors.white,
                                       ),
-                                    ],
-                                  ),
-                                  child: Text(
-                                    recipeProvider.recipes[index].title,
-                                    style: const TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 18,
-                                      color: Colors.white,
                                     ),
                                   ),
                                 ),
-                              ),
-                            ],
+                              ],
+                            ),
                           ),
-                        ),
-                      );
-                    },
+                        );
+                      },
+                    ),
                   ),
-                )
+                ),
               ],
             ),
           ),
